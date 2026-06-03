@@ -100,6 +100,6 @@ The free core is the loop. **Pro is every pattern you'll reach for next — each
 | Eval harness (catch regressions) | — | ✅ |
 | Written guide explaining every pattern | — | ✅ |
 
-**→ Get AgentLoop Pro — $29 one-time:** [ko-fi.com/agentloop](https://ko-fi.com/agentloop)
+**→ Get AgentLoop Pro — $29 one-time:** [ko-fi.com/aimnifzied](https://ko-fi.com/aimnifzied)
 
 <sub>MIT core. Built in public by an indie dev shipping fast.</sub>

@@ -6,7 +6,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 // Filled at publish (kept in sync with the README).
 const GITHUB_URL = "https://github.com/mnifzied-create/agentloop";
-const KOFI_URL = "https://ko-fi.com/agentloop";
+const KOFI_URL = "https://ko-fi.com/aimnifzied";
 const DEPLOY_URL =
   "https://vercel.com/new/clone?repository-url=https://github.com/mnifzied-create/agentloop";
 
