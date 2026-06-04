@@ -103,9 +103,12 @@ You shipped your agent. Then real users hit it — and **eight things broke that
 | Human-in-the-loop approval gate | — | ✅ |
 | Sub-agents / delegation | — | ✅ |
 | Eval harness (catch regressions in CI) | — | ✅ |
+| **Token & cost metering (usage per run)** | — | ✅ |
+| **Works with any model — Claude or via OpenRouter** | — | ✅ |
+| **Tested — 29-test suite + CI, all green** | — | ✅ |
 | Written guide for every pattern | — | ✅ |
 
-Runs in 60 seconds: `npm install && npm run demo` runs all of it against a mock model — no API key needed. Every module is small enough to read top to bottom: you **own** it, you're not importing a black box.
+Runs in 60 seconds: `npm install && npm run demo` runs all of it against a mock model — no API key needed, and `npm test` runs the full 29-test suite. Every module is small enough to read top to bottom: you **own** it, not a black box — and the `ModelCaller` seam means it runs on Claude or any model via OpenRouter.
 
 **→ AgentLoop Pro — $29 one-time · commercial license · unlimited projects:** [ko-fi.com/aimnifzied](https://ko-fi.com/aimnifzied)
 
