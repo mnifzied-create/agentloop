@@ -86,7 +86,9 @@ Next.js (App Router) · TypeScript · [`@anthropic-ai/sdk`](https://github.com/a
 
 ## 🔁 AgentLoop Pro
 
-The free core is the loop. **Pro is every pattern you'll reach for next — each one as minimal and readable as the core.** Not a bloated SaaS kit; the same teach-by-reading philosophy, leveled up.
+You shipped your agent. Then real users hit it — and **eight things broke that the demo never showed**: the model wants three tools at once, a flaky API call kills the turn, it forgets everything between requests, it deletes a record with no confirmation.
+
+**AgentLoop Pro is those eight fixes — each solved correctly and minimally**, so you drop them in instead of spending a week rediscovering them (and getting the subtle parts wrong). Same teach-by-reading philosophy as the core, leveled up to production.
 
 | Pattern | Free | **Pro** |
 |---|:---:|:---:|
@@ -94,12 +96,17 @@ The free core is the loop. **Pro is every pattern you'll reach for next — each
 | Parallel & multi-tool orchestration | — | ✅ |
 | Structured outputs (typed JSON) | — | ✅ |
 | Persistent memory (SQLite threads) | — | ✅ |
-| Retries, timeouts & error handling | — | ✅ |
+| Retries, timeouts & error-as-context | — | ✅ |
+| Token-bucket rate limiting (per user/IP) | — | ✅ |
 | Human-in-the-loop approval gate | — | ✅ |
 | Sub-agents / delegation | — | ✅ |
-| Eval harness (catch regressions) | — | ✅ |
-| Written guide explaining every pattern | — | ✅ |
+| Eval harness (catch regressions in CI) | — | ✅ |
+| Written guide for every pattern | — | ✅ |
 
-**→ Get AgentLoop Pro — $29 one-time:** [ko-fi.com/aimnifzied](https://ko-fi.com/aimnifzied)
+Runs in 60 seconds: `npm install && npm run demo` runs all of it against a mock model — no API key needed. Every module is small enough to read top to bottom: you **own** it, you're not importing a black box.
+
+**→ AgentLoop Pro — $29 one-time · commercial license · unlimited projects:** [ko-fi.com/aimnifzied](https://ko-fi.com/aimnifzied)
+
+*Not worth it? Reply to your receipt and I'll refund you — no questions asked. The free core stands alone forever; Pro is the shortcut for when you ship.*
 
 <sub>MIT core. Built in public by an indie dev shipping fast.</sub>
