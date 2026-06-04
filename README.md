@@ -13,6 +13,8 @@ The full agent loop — streaming + tool use — in ~150 lines. No framework, no
 
 The AI-starter shelf is crowded with two kinds of repo: black-box frameworks that hide the loop, and giant SaaS kits you spend a day deleting. **AgentLoop is neither.** It's the actual agent loop — model calls a tool, you run it, the result goes back, repeat — written plainly enough to learn from and solid enough to build on.
 
+> **Build your own agent on the Anthropic SDK — this is not a Claude Code (CLI) extension.** If you searched for a *Claude agent boilerplate*, an *Anthropic SDK agent example*, or how to *build an AI agent in Next.js* and kept landing on Claude Code (the coding CLI), AgentLoop is the other thing: a readable starter for an agent product you ship and own — the streaming tool-use loop in plain code.
+
 ### What you get (free, MIT)
 - ✅ **Streaming chat** — tokens render as they arrive. Plain `fetch` + `ReadableStream`, zero UI deps, no SDK lock-in.
 - ✅ **Real tool use** — a working agent loop, not a single `if`.
