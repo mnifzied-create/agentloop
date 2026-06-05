@@ -104,6 +104,23 @@
 
           <div class="tp-savings" id="savings"></div>
 
+          <!-- ── Quantified, personalized takeaway + share ─────────── -->
+          <div class="tp-takeaway">
+            <p class="tp-money" id="money"></p>
+            <div class="tp-share">
+              <button type="button" class="tp-copy" id="copyResult" aria-live="polite">Copy result</button>
+              <button
+                type="button"
+                class="tp-copy ghost"
+                id="copyLink"
+                aria-live="polite"
+                title="Copies a link that reloads this exact scenario"
+              >
+                Copy link to this scenario
+              </button>
+            </div>
+          </div>
+
           <p class="tp-pricing-note">
             Pricing = approximate public list prices, mid-2026, blended input/output per 1M tokens.
             <strong> Verify with the provider</strong> — edit the values in
@@ -126,6 +143,7 @@
 
       <!-- ── BRIDGE / CTA ────────────────────────────────────── -->
       <section class="tp-cta">
+        <p class="tp-cta-connect" id="ctaConnect"></p>
         <p>
           Token metering is 1 of 8 production patterns in AgentLoop. The free MIT core is the readable
           agent loop you can build on; <strong>AgentLoop Pro</strong> wires up all eight — parallel

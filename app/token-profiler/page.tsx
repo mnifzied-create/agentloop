@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_ASSISTANT_MESSAGE,
   DEFAULT_PRIMARY_MODEL,
@@ -31,6 +31,62 @@ const fmtUsd = (n: number) =>
     ? `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 
+// Public URL of the live static twin — the canonical link we put in shared text.
+const SHARE_URL = "https://mnifzied-create.github.io/agentloop/";
+
+// ── Deep-link (de)serialization ──────────────────────────────────────────────
+// The current scenario is encoded into the URL's query string so a copied link
+// reloads the same inputs. Purely client-side; touches no math. Tool outputs are
+// joined with a delimiter that cannot occur in JSON. Anything malformed on load
+// is ignored and the defaults stand.
+const OUTPUT_SEP = "";
+
+interface ScenarioInputs {
+  systemPrompt: string;
+  toolJson: string;
+  toolOutputs: string[];
+  userMessage: string;
+  assistantMessage: string;
+  toolCallsPerTurn: number;
+  turns: number;
+  primaryModel: ModelId;
+}
+
+function encodeScenario(s: ScenarioInputs): string {
+  const q = new URLSearchParams();
+  q.set("sys", s.systemPrompt);
+  q.set("tools", s.toolJson);
+  q.set("out", s.toolOutputs.join(OUTPUT_SEP));
+  q.set("user", s.userMessage);
+  q.set("asst", s.assistantMessage);
+  q.set("calls", String(s.toolCallsPerTurn));
+  q.set("turns", String(s.turns));
+  q.set("model", s.primaryModel);
+  return q.toString();
+}
+
+/** Read a scenario from a query string. Returns only the fields actually present. */
+function decodeScenario(search: string): Partial<ScenarioInputs> {
+  const q = new URLSearchParams(search);
+  const out: Partial<ScenarioInputs> = {};
+  if (q.has("sys")) out.systemPrompt = q.get("sys") ?? "";
+  if (q.has("tools")) out.toolJson = q.get("tools") ?? "";
+  if (q.has("out")) out.toolOutputs = (q.get("out") ?? "").split(OUTPUT_SEP);
+  if (q.has("user")) out.userMessage = q.get("user") ?? "";
+  if (q.has("asst")) out.assistantMessage = q.get("asst") ?? "";
+  if (q.has("calls")) {
+    const n = Number(q.get("calls"));
+    if (Number.isFinite(n)) out.toolCallsPerTurn = n;
+  }
+  if (q.has("turns")) {
+    const n = Number(q.get("turns"));
+    if (Number.isFinite(n)) out.turns = n;
+  }
+  const model = q.get("model");
+  if (model && model in PRICING) out.primaryModel = model as ModelId;
+  return out;
+}
+
 export default function TokenProfilerPage() {
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
   const [toolJson, setToolJson] = useState(DEFAULT_TOOL_JSON);
@@ -40,6 +96,22 @@ export default function TokenProfilerPage() {
   const [toolCallsPerTurn, setToolCallsPerTurn] = useState(DEFAULT_TOOL_CALLS_PER_TURN);
   const [turns, setTurns] = useState(DEFAULT_TURNS);
   const [primaryModel, setPrimaryModel] = useState<ModelId>(DEFAULT_PRIMARY_MODEL);
+  const [copied, setCopied] = useState<"" | "text" | "link">("");
+
+  // Deep-link: on first load, hydrate any inputs present in the URL query string.
+  // Runs once, client-side only; missing/invalid params leave the defaults intact.
+  useEffect(() => {
+    const parsed = decodeScenario(window.location.search);
+    if (parsed.systemPrompt !== undefined) setSystemPrompt(parsed.systemPrompt);
+    if (parsed.toolJson !== undefined) setToolJson(parsed.toolJson);
+    if (parsed.toolOutputs !== undefined && parsed.toolOutputs.length) setToolOutputs(parsed.toolOutputs);
+    if (parsed.userMessage !== undefined) setUserMessage(parsed.userMessage);
+    if (parsed.assistantMessage !== undefined) setAssistantMessage(parsed.assistantMessage);
+    if (parsed.toolCallsPerTurn !== undefined) setToolCallsPerTurn(parsed.toolCallsPerTurn);
+    if (parsed.turns !== undefined) setTurns(parsed.turns);
+    if (parsed.primaryModel !== undefined) setPrimaryModel(parsed.primaryModel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toolsParse = useMemo(() => analyzeTools(toolJson), [toolJson]);
 
@@ -59,8 +131,68 @@ export default function TokenProfilerPage() {
 
   const proj = useMemo(() => project(inputs), [inputs]);
   const flags = useMemo(() => bloatFlags(inputs, proj), [inputs, proj]);
-
   const pt = proj.perTurn;
+
+  // ── Quantified, personalized share/CTA data ──────────────────────────────
+  // Every number here is reused from the already-computed `proj`/`flags` above,
+  // so the figure we surface in the CTA and the copied text is the SAME figure
+  // shown in the table and the bloat list. No new arithmetic on the cost model.
+  const share = useMemo(() => {
+    // Money on the table = (sum of bloat-flag halving savings) + (best routing
+    // saving available). Both are already tied to the user's chosen N-turn
+    // window, so this stays honest — no annualized extrapolation.
+    const bloatSavings = flags.reduce((sum, f) => sum + f.savingIfHalved, 0);
+    const usesCheaperClaude =
+      proj.savedVsCheaperClaude !== null && proj.savedVsCheaperClaude > 0;
+    const routingSaving = usesCheaperClaude
+      ? (proj.savedVsCheaperClaude as number)
+      : proj.savedVsThirdParty > 0
+        ? proj.savedVsThirdParty
+        : 0;
+    const routeLabel = usesCheaperClaude
+      ? proj.cheaperClaude?.label ?? "a cheaper model"
+      : proj.thirdParty.label;
+
+    const turnsN = inputs.turns || 0;
+    const topFlag = flags[0] ?? null;
+
+    // Paste-ready one-liner built from the live computed result.
+    const biggestBloat = topFlag
+      ? `Biggest bloat: ${topFlag.name} (${fmtTok(topFlag.tokens)} tok).`
+      : "No single item over the bloat threshold.";
+    const copyText =
+      `My AI agent: ~${fmtTok(pt.totalTokens)} tokens/turn, ${fmtUsd(proj.primary.cost)} over ` +
+      `${fmtTok(turnsN)} turns on ${proj.primary.label}. ${biggestBloat} ` +
+      `Profiled free with AgentLoop's Token Profiler → ${SHARE_URL}`;
+
+    // Deep-link that reloads this exact scenario.
+    const shareLink =
+      typeof window !== "undefined"
+        ? `${window.location.origin}${window.location.pathname}?${encodeScenario(inputs)}`
+        : `${SHARE_URL}?${encodeScenario(inputs)}`;
+
+    return {
+      bloatSavings,
+      routingSaving,
+      routeLabel,
+      hasMoney: bloatSavings > 0 || routingSaving > 0,
+      copyText,
+      shareLink,
+    };
+  }, [flags, proj, inputs, pt.totalTokens]);
+
+  // Copy helper — writes to the clipboard and flashes a short confirmation.
+  const copyToClipboard = useCallback(async (text: string, which: "text" | "link") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(which);
+      window.setTimeout(() => setCopied(""), 2000);
+    } catch {
+      // Clipboard can be blocked (insecure context / permissions). Stay silent
+      // rather than throwing — the on-screen numbers are unaffected.
+    }
+  }, []);
+
   const barMax = Math.max(pt.systemTokens, pt.toolSchemaTokens, pt.messageTokens, pt.toolOutputTokens, 1);
 
   const breakdownRows = [
@@ -237,6 +369,53 @@ export default function TokenProfilerPage() {
             )}
           </div>
 
+          {/* ── Quantified, personalized takeaway + share ─────────── */}
+          <div className="tp-takeaway">
+            {share.hasMoney ? (
+              <p className="tp-money">
+                Two separate levers over your {fmtTok(inputs.turns || 0)} turns
+                {share.bloatSavings > 0 && (
+                  <>
+                    : trim the flagged bloat to save about{" "}
+                    <strong>{fmtUsd(share.bloatSavings)}</strong>
+                  </>
+                )}
+                {share.routingSaving > 0 && (
+                  <>
+                    {share.bloatSavings > 0 ? "; or route" : ": route"} the easy turns to{" "}
+                    <strong>{share.routeLabel}</strong> to save about{" "}
+                    <strong>{fmtUsd(share.routingSaving)}</strong>
+                  </>
+                )}
+                . They overlap, so don&apos;t just add them.
+              </p>
+            ) : (
+              <p className="tp-money tp-money-lean">
+                Your per-turn overhead is lean — nice. Nothing obvious to trim, and no cheaper route on the
+                table for this setup.
+              </p>
+            )}
+            <div className="tp-share">
+              <button
+                type="button"
+                className="tp-copy"
+                onClick={() => copyToClipboard(share.copyText, "text")}
+                aria-live="polite"
+              >
+                {copied === "text" ? "✓ copied!" : "Copy result"}
+              </button>
+              <button
+                type="button"
+                className="tp-copy ghost"
+                onClick={() => copyToClipboard(share.shareLink, "link")}
+                aria-live="polite"
+                title="Copies a link that reloads this exact scenario"
+              >
+                {copied === "link" ? "✓ link copied!" : "Copy link to this scenario"}
+              </button>
+            </div>
+          </div>
+
           <p className="tp-pricing-note">
             Pricing = approximate public list prices, mid-2026, blended input/output per 1M tokens.
             <strong> Verify with the provider</strong> — edit the values in{" "}
@@ -302,6 +481,20 @@ export default function TokenProfilerPage() {
 
       {/* ── BRIDGE / CTA ────────────────────────────────────── */}
       <section className="tp-cta">
+        <p className="tp-cta-connect">
+          {share.hasMoney ? (
+            <>
+              <strong>Token metering</strong> catches that bloat; a <strong>multi-provider seam</strong>{" "}
+              routes the cheap turns — capturing both savings above is exactly what they&apos;re for. 2 of
+              AgentLoop Pro&apos;s 8 patterns. Pay what you want, from $9.
+            </>
+          ) : (
+            <>
+              <strong>Token metering</strong> + a <strong>multi-provider seam</strong> keep an agent lean
+              as it grows — 2 of AgentLoop Pro&apos;s 8 patterns. Pay what you want, from $9.
+            </>
+          )}
+        </p>
         <p>
           Token metering is 1 of 8 production patterns in AgentLoop. The free MIT core is the readable
           agent loop you can build on; <strong>AgentLoop Pro</strong> wires up all eight — parallel

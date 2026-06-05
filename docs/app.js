@@ -292,6 +292,105 @@ function esc(s) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Share / deep-link helpers (NOT part of the token/cost math)
+// ─────────────────────────────────────────────────────────────────────────────
+// Public URL of this live page — the canonical link we put in shared text.
+const SHARE_URL = "https://mnifzied-create.github.io/agentloop/";
+
+// The current scenario is (de)serialized to/from the URL query string so a
+// copied link reloads the same inputs. Tool outputs are joined with a unit
+// separator that cannot occur in JSON; malformed params on load are ignored.
+const OUTPUT_SEP = "";
+
+function encodeScenario(s) {
+  const q = new URLSearchParams();
+  q.set("sys", s.systemPrompt);
+  q.set("tools", s.toolJson);
+  q.set("out", s.toolOutputs.join(OUTPUT_SEP));
+  q.set("user", s.userMessage);
+  q.set("asst", s.assistantMessage);
+  q.set("calls", String(s.toolCallsPerTurn));
+  q.set("turns", String(s.turns));
+  q.set("model", s.primaryModel);
+  return q.toString();
+}
+
+function decodeScenario(search) {
+  const q = new URLSearchParams(search);
+  const out = {};
+  if (q.has("sys")) out.systemPrompt = q.get("sys") ?? "";
+  if (q.has("tools")) out.toolJson = q.get("tools") ?? "";
+  if (q.has("out")) out.toolOutputs = (q.get("out") ?? "").split(OUTPUT_SEP);
+  if (q.has("user")) out.userMessage = q.get("user") ?? "";
+  if (q.has("asst")) out.assistantMessage = q.get("asst") ?? "";
+  if (q.has("calls")) {
+    const n = Number(q.get("calls"));
+    if (Number.isFinite(n)) out.toolCallsPerTurn = n;
+  }
+  if (q.has("turns")) {
+    const n = Number(q.get("turns"));
+    if (Number.isFinite(n)) out.turns = n;
+  }
+  const model = q.get("model");
+  if (model && model in PRICING) out.primaryModel = model;
+  return out;
+}
+
+// Build the personalized, paste-ready text + the "money on the table" number
+// from the ALREADY-computed proj/flags/perTurn — same figures the page shows.
+function buildShare(inputs, proj, flags, pt) {
+  const bloatSavings = flags.reduce((sum, f) => sum + f.savingIfHalved, 0);
+  const usesCheaperClaude =
+    proj.savedVsCheaperClaude !== null && proj.savedVsCheaperClaude > 0;
+  const routingSaving = usesCheaperClaude
+    ? proj.savedVsCheaperClaude
+    : proj.savedVsThirdParty > 0
+      ? proj.savedVsThirdParty
+      : 0;
+  const routeLabel = usesCheaperClaude
+    ? (proj.cheaperClaude && proj.cheaperClaude.label) || "a cheaper model"
+    : proj.thirdParty.label;
+
+  const turnsN = inputs.turns || 0;
+  const topFlag = flags[0] || null;
+  const biggestBloat = topFlag
+    ? `Biggest bloat: ${topFlag.name} (${fmtTok(topFlag.tokens)} tok).`
+    : "No single item over the bloat threshold.";
+  const copyText =
+    `My AI agent: ~${fmtTok(pt.totalTokens)} tokens/turn, ${fmtUsd(proj.primary.cost)} over ` +
+    `${fmtTok(turnsN)} turns on ${proj.primary.label}. ${biggestBloat} ` +
+    `Profiled free with AgentLoop's Token Profiler → ${SHARE_URL}`;
+
+  const shareLink = `${window.location.origin}${window.location.pathname}?${encodeScenario(inputs)}`;
+
+  return {
+    bloatSavings,
+    routingSaving,
+    routeLabel,
+    hasMoney: bloatSavings > 0 || routingSaving > 0,
+    copyText,
+    shareLink,
+  };
+}
+
+// Copy text to the clipboard and flash a 2s confirmation on the given button.
+function copyToClipboard(text, btn, okLabel) {
+  const restore = btn.dataset.label || btn.textContent;
+  btn.dataset.label = restore;
+  navigator.clipboard.writeText(text).then(
+    () => {
+      btn.textContent = okLabel;
+      window.setTimeout(() => {
+        btn.textContent = btn.dataset.label;
+      }, 2000);
+    },
+    () => {
+      // Clipboard blocked (insecure context / permissions) — fail quietly.
+    },
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Component state (mirrors useState in page.tsx)
 // ─────────────────────────────────────────────────────────────────────────────
 const state = {
@@ -304,6 +403,23 @@ const state = {
   turns: DEFAULT_TURNS,
   primaryModel: DEFAULT_PRIMARY_MODEL,
 };
+
+// Latest computed share payload (copy text + deep-link), refreshed every render
+// so the copy buttons always emit numbers matching what's on screen.
+let lastShare = { avoidable: 0, hasMoney: false, copyText: "", shareLink: SHARE_URL };
+
+// Apply any inputs encoded in the URL on first load (deep-link), before render.
+function hydrateFromUrl() {
+  const parsed = decodeScenario(window.location.search);
+  if (parsed.systemPrompt !== undefined) state.systemPrompt = parsed.systemPrompt;
+  if (parsed.toolJson !== undefined) state.toolJson = parsed.toolJson;
+  if (parsed.toolOutputs !== undefined && parsed.toolOutputs.length) state.toolOutputs = parsed.toolOutputs;
+  if (parsed.userMessage !== undefined) state.userMessage = parsed.userMessage;
+  if (parsed.assistantMessage !== undefined) state.assistantMessage = parsed.assistantMessage;
+  if (parsed.toolCallsPerTurn !== undefined) state.toolCallsPerTurn = parsed.toolCallsPerTurn;
+  if (parsed.turns !== undefined) state.turns = parsed.turns;
+  if (parsed.primaryModel !== undefined) state.primaryModel = parsed.primaryModel;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DOM refs
@@ -323,6 +439,10 @@ const el = {
   bars: document.getElementById("bars"),
   projBody: document.getElementById("projBody"),
   savings: document.getElementById("savings"),
+  money: document.getElementById("money"),
+  copyResult: document.getElementById("copyResult"),
+  copyLink: document.getElementById("copyLink"),
+  ctaConnect: document.getElementById("ctaConnect"),
   bloat: document.getElementById("bloat"),
   mathList: document.getElementById("mathList"),
 };
@@ -464,6 +584,39 @@ function recompute() {
   }
   el.savings.innerHTML = savingsHtml;
 
+  // Quantified, personalized takeaway + share text (reuses proj/flags/pt above).
+  const share = buildShare(inputs, proj, flags, pt);
+  lastShare = share; // captured by the copy-button click handlers
+  if (share.hasMoney) {
+    el.money.className = "tp-money";
+    const bloatClause =
+      share.bloatSavings > 0
+        ? `: trim the flagged bloat to save about <strong>${fmtUsd(share.bloatSavings)}</strong>`
+        : "";
+    const routeClause =
+      share.routingSaving > 0
+        ? `${share.bloatSavings > 0 ? "; or route" : ": route"} the easy turns to <strong>${esc(
+            share.routeLabel,
+          )}</strong> to save about <strong>${fmtUsd(share.routingSaving)}</strong>`
+        : "";
+    el.money.innerHTML =
+      `Two separate levers over your ${turnsLabel} turns${bloatClause}${routeClause}. ` +
+      `They overlap, so don't just add them.`;
+  } else {
+    el.money.className = "tp-money tp-money-lean";
+    el.money.innerHTML =
+      `Your per-turn overhead is lean — nice. Nothing obvious to trim, and no cheaper route on the ` +
+      `table for this setup.`;
+  }
+
+  // Bridge / CTA connecting line (ties the money number to the two Pro patterns).
+  el.ctaConnect.innerHTML = share.hasMoney
+    ? `<strong>Token metering</strong> catches that bloat; a <strong>multi-provider seam</strong> routes ` +
+      `the cheap turns — capturing both savings above is exactly what they're for. 2 of AgentLoop Pro's ` +
+      `8 patterns. Pay what you want, from $9.`
+    : `<strong>Token metering</strong> + a <strong>multi-provider seam</strong> keep an agent lean as it ` +
+      `grows — 2 of AgentLoop Pro's 8 patterns. Pay what you want, from $9.`;
+
   // Bloat flags
   if (flags.length === 0) {
     el.bloat.innerHTML = `<p class="tp-ok">✓ No single tool schema or output is over ~${BLOAT_THRESHOLD} tokens. Nothing is obviously inflating every turn.</p>`;
@@ -506,6 +659,9 @@ function recompute() {
 //  Wire up inputs (live recompute, matching the React onChange listeners)
 // ─────────────────────────────────────────────────────────────────────────────
 function init() {
+  // Deep-link: hydrate state from the URL before anything renders.
+  hydrateFromUrl();
+
   // Populate the model <select> from PRIMARY_MODEL_IDS.
   el.primaryModel.innerHTML = PRIMARY_MODEL_IDS.map(
     (id) => `<option value="${id}">${esc(PRICING[id].label)}</option>`,
@@ -547,6 +703,14 @@ function init() {
     state.toolOutputs.push("");
     renderOutputs();
     recompute();
+  });
+
+  // Share buttons — emit the latest computed payload (matches what's on screen).
+  el.copyResult.addEventListener("click", () => {
+    copyToClipboard(lastShare.copyText, el.copyResult, "✓ copied!");
+  });
+  el.copyLink.addEventListener("click", () => {
+    copyToClipboard(lastShare.shareLink, el.copyLink, "✓ link copied!");
   });
 
   recompute();
