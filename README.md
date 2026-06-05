@@ -92,6 +92,8 @@ You shipped your agent. Then real users hit it — and **eight things broke that
 
 **AgentLoop Pro is those eight fixes — each solved correctly and minimally**, so you drop them in instead of spending a week rediscovering them (and getting the subtle parts wrong). Same teach-by-reading philosophy as the core, leveled up to production.
 
+> The one that quietly costs the most: **token bloat.** Your bill balloons and you can't see *which* tool is eating the context. Pro meters tokens per run and per tool — and the same seam lets you route cheap turns to a cheaper model.
+
 | Pattern | Free | **Pro** |
 |---|:---:|:---:|
 | Streaming + single-tool loop | ✅ | ✅ |
@@ -110,7 +112,7 @@ You shipped your agent. Then real users hit it — and **eight things broke that
 
 Runs in 60 seconds: `npm install && npm run demo` runs all of it against a mock model — no API key needed, and `npm test` runs the full 29-test suite. Every module is small enough to read top to bottom: you **own** it, not a black box — and the `ModelCaller` seam means it runs on Claude or any model via OpenRouter.
 
-**→ AgentLoop Pro — $29 one-time · commercial license · unlimited projects:** [ko-fi.com/aimnifzied](https://ko-fi.com/aimnifzied)
+**→ AgentLoop Pro — launch offer: pay what you want, from $9** _(normally $29)_ · commercial license · unlimited projects · **[get it on Ko-fi →](https://ko-fi.com/s/7306cb3140)**
 
 *Not worth it? Reply to your receipt and I'll refund you — no questions asked. The free core stands alone forever; Pro is the shortcut for when you ship.*
 
