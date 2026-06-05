@@ -221,6 +221,11 @@ footer a { color: var(--accent); text-decoration: none; }
 .tp-math li { font-size: 13px; color: var(--muted); line-height: 1.55; }
 .tp-math em { font-style: normal; color: var(--text); }
 
+/* FAQ (AEO) */
+.tp-faq h3 { margin: 18px 0 6px; font-size: 14px; color: var(--text); letter-spacing: -0.01em; }
+.tp-faq h3:first-of-type { margin-top: 6px; }
+.tp-faq p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
 /* CTA */
 .tp-cta { border: 1px solid var(--border); border-radius: 16px; background: var(--panel); padding: 24px 22px; margin: 16px 0; text-align: center; }
 .tp-cta p { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 680px; margin: 0 auto 18px; }

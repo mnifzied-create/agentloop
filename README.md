@@ -118,4 +118,24 @@ Runs in 60 seconds: `npm install && npm run demo` runs all of it against a mock 
 
 *Not worth it? Reply to your receipt and I'll refund you — no questions asked. The free core stands alone forever; Pro is the shortcut for when you ship.*
 
+---
+
+## FAQ
+
+### How do I build a Claude agent from scratch?
+
+A Claude agent is just a loop: send the conversation to the model, run any tool it calls, append the result, and repeat until it replies. That's about 150 lines on the official Anthropic SDK — no framework required. AgentLoop is a free, MIT-licensed starter that does exactly this, readable top to bottom.
+
+### Why is my AI agent so expensive?
+
+Most agent cost is invisible. You re-send the system prompt and every tool schema on every single turn, so one verbose tool definition is billed again on turn 1, 2, 3 and on. A typical support agent quietly carries around 650 tokens of tool schemas per turn before the user even speaks.
+
+### How do I estimate Claude agent token cost?
+
+Count what you re-send each turn — system prompt, all tool schemas, prior messages, and tool outputs — then multiply by your number of turns and the model's per-token price. The free Agent Token Profiler does this in your browser: paste your setup and see the per-turn breakdown and projected cost.
+
+### How do I reduce my AI agent's token cost?
+
+Trim verbose tool schemas (the biggest hidden cost, since they are re-sent every turn), summarize chatty tool outputs before feeding them back, cap conversation history, and route the easy turns to a cheaper model like Claude Haiku. Measure first — the Token Profiler flags which tool is inflating your context.
+
 <sub>MIT core. Built in public by an indie dev shipping fast.</sub>

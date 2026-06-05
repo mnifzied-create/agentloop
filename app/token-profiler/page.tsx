@@ -34,6 +34,39 @@ const fmtUsd = (n: number) =>
 // Public URL of the live static twin — the canonical link we put in shared text.
 const SHARE_URL = "https://mnifzied-create.github.io/agentloop/";
 
+// ── FAQ content (AEO) ────────────────────────────────────────────────────────
+// Single source of truth for the visible FAQ section and its FAQPage JSON-LD,
+// so the structured data can never drift from what's on screen. Pure content —
+// no bearing on the cost model. Mirrors docs/index.html and the README.
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: "How do I build a Claude agent from scratch?",
+    a: "A Claude agent is just a loop: send the conversation to the model, run any tool it calls, append the result, and repeat until it replies. That's about 150 lines on the official Anthropic SDK — no framework required. AgentLoop is a free, MIT-licensed starter that does exactly this, readable top to bottom.",
+  },
+  {
+    q: "Why is my AI agent so expensive?",
+    a: "Most agent cost is invisible. You re-send the system prompt and every tool schema on every single turn, so one verbose tool definition is billed again on turn 1, 2, 3 and on. A typical support agent quietly carries around 650 tokens of tool schemas per turn before the user even speaks.",
+  },
+  {
+    q: "How do I estimate Claude agent token cost?",
+    a: "Count what you re-send each turn — system prompt, all tool schemas, prior messages, and tool outputs — then multiply by your number of turns and the model's per-token price. The free Agent Token Profiler does this in your browser: paste your setup and see the per-turn breakdown and projected cost.",
+  },
+  {
+    q: "How do I reduce my AI agent's token cost?",
+    a: "Trim verbose tool schemas (the biggest hidden cost, since they are re-sent every turn), summarize chatty tool outputs before feeding them back, cap conversation history, and route the easy turns to a cheaper model like Claude Haiku. Measure first — the Token Profiler flags which tool is inflating your context.",
+  },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
+
 // ── Deep-link (de)serialization ──────────────────────────────────────────────
 // The current scenario is encoded into the URL's query string so a copied link
 // reloads the same inputs. Purely client-side; touches no math. Tool outputs are
@@ -477,6 +510,21 @@ export default function TokenProfilerPage() {
             them every turn — that&apos;s the cost people forget.
           </li>
         </ul>
+      </section>
+
+      {/* ── FAQ (AEO) ───────────────────────────────────────── */}
+      <section className="tp-panel tp-faq">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <h2>FAQ</h2>
+        {FAQ_ITEMS.map(({ q, a }) => (
+          <div key={q}>
+            <h3>{q}</h3>
+            <p>{a}</p>
+          </div>
+        ))}
       </section>
 
       {/* ── BRIDGE / CTA ────────────────────────────────────── */}
