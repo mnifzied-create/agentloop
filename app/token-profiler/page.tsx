@@ -94,6 +94,9 @@ export default function TokenProfilerPage() {
         <p className="tp-estimate-note">
           Token counts are an <strong>estimate</strong> (computed locally with a GPT BPE tokenizer;
           Anthropic&apos;s differs by a few percent). Prices are approximate — see the note by the table.
+          This projects each turn&apos;s <strong>fixed overhead</strong> (system + schemas + tool I/O) × N;
+          it does not model a <em>growing</em> transcript, so a long accumulating conversation will cost
+          more — the point here is to surface that per-turn overhead and find what&apos;s bloating it.
         </p>
       </section>
 
