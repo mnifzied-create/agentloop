@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Hidden Token Tax: What Real AI Agents Cost Per Turn — AgentLoop</title>
+    <meta
+      name="description"
+      content="We measured 13 real open-source AI agents (79 tools). GitHub's MCP server re-sends 3,546 tokens of tool schemas every turn — $12.89 per 1,000 turns on Sonnet, before the model reads the user's question. The median agent's invisible per-turn overhead is 9.6× the user's actual request. Full dataset, methodology, and caveats."
+    />
+    <link rel="canonical" href="https://mnifzied-create.github.io/agentloop/token-tax/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:title"
+      content="The Hidden Token Tax: What Real AI Agents Cost Per Turn"
+    />
+    <meta
+      property="og:description"
+      content="13 real open-source AI agents, 79 tools, measured. GitHub's MCP server re-sends 3,546 tokens of tool schemas every turn — $12.89 per 1,000 turns on Sonnet, before the model reads the question. The median agent's invisible overhead is 9.6× the user's request."
+    />
+    <meta property="og:site_name" content="AgentLoop" />
+    <meta property="og:url" content="https://mnifzied-create.github.io/agentloop/token-tax/" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="The Hidden Token Tax: What Real AI Agents Cost Per Turn"
+    />
+    <meta
+      name="twitter:description"
+      content="13 real open-source AI agents, 79 tools, measured. GitHub's MCP server re-sends 3,546 tokens every turn — $12.89 per 1,000 turns on Sonnet, before the model reads the question."
+    />
+
+    <link rel="stylesheet" href="../styles.css" />
+
+    <!-- Article structured data (SEO/AEO) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "The Hidden Token Tax: What Real Open-Source AI Agents Actually Cost Per Turn",
+        "description": "We measured the fixed per-turn overhead (system prompt + tool schemas) of 13 real open-source AI agents totalling 79 tools. GitHub's MCP server re-sends 3,546 tokens of tool schemas every turn — $12.89 per 1,000 turns on Sonnet — before the model reads the user's question.",
+        "about": [
+          "AI agent token cost",
+          "MCP server cost",
+          "LLM tool schema overhead",
+          "Claude agent pricing"
+        ],
+        "publisher": {
+          "@type": "Organization",
+          "name": "AgentLoop",
+          "url": "https://mnifzied-create.github.io/agentloop/"
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://mnifzied-create.github.io/agentloop/token-tax/"
+        },
+        "url": "https://mnifzied-create.github.io/agentloop/token-tax/"
+      }
+    </script>
+
+    <!-- Page-specific styles: data table, finding cards, value-first CTA.
+         Reuses the shared dark palette (CSS vars) + .tp-* conventions. -->
+    <style>
+      .study main { max-width: 980px; }
+
+      /* breadcrumb back-link */
+      .study-back { font-size: 13px; color: var(--accent); text-decoration: none; }
+      .study-back:hover { color: var(--accent2); }
+
+      /* lede under the hero headline — leads with the killer number */
+      .study-lede {
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.6;
+        max-width: 760px;
+        margin: 18px auto 6px;
+      }
+      .study-lede strong { color: var(--text); font-weight: 600; }
+      .study-lede .hot { color: var(--accent2); font-weight: 700; }
+
+      /* headline number strip */
+      .study-stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin: 26px auto 4px;
+        max-width: 760px;
+      }
+      .study-stat {
+        flex: 1 1 150px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 16px 14px;
+        text-align: center;
+      }
+      .study-stat .n { font-size: 26px; font-weight: 700; color: var(--accent2); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+      .study-stat .l { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+      /* section scaffolding */
+      .study-section { margin: 40px 0; }
+      .study-section > h2 {
+        font-size: 22px;
+        letter-spacing: -0.02em;
+        margin: 0 0 6px;
+      }
+      .study-section > .study-sub {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+        margin: 0 0 20px;
+        max-width: 760px;
+      }
+
+      /* findings as numbered cards */
+      .study-findings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .study-find {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 18px 18px 16px;
+        position: relative;
+      }
+      .study-find .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px; height: 26px;
+        border-radius: 8px;
+        background: rgba(109, 139, 255, 0.12);
+        border: 1px solid var(--border);
+        color: var(--accent2);
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      .study-find .lead { color: var(--text); font-weight: 600; font-size: 15px; line-height: 1.45; display: block; margin-bottom: 6px; }
+      .study-find p { color: var(--muted); font-size: 13.5px; line-height: 1.55; margin: 0; }
+      .study-find code { font-size: 0.88em; }
+
+      /* data table — horizontal scroll wrapper for mobile */
+      .study-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        -webkit-overflow-scrolling: touch;
+      }
+      .study-data {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 840px;
+      }
+      .study-data thead th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 13px 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel2);
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+      }
+      .study-data tbody td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        line-height: 1.4;
+      }
+      .study-data tbody tr:last-child td { border-bottom: none; }
+      .study-data tbody tr:hover { background: var(--panel2); }
+      .study-data .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .study-data .agent { color: var(--text); font-weight: 600; white-space: nowrap; }
+      .study-data .type { color: var(--muted); font-size: 12px; }
+      .study-data .cost { color: var(--text); font-weight: 600; }
+      .study-data .fat { color: var(--muted); font-size: 12px; }
+      .study-data .fat code { font-size: 0.92em; padding: 0 4px; }
+      .study-scroll-hint { color: #6b7287; font-size: 11.5px; margin: 8px 2px 0; }
+
+      /* two-archetype callout */
+      .study-note {
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        background: rgba(109, 139, 255, 0.05);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+      .study-note strong { color: var(--text); }
+
+      /* methodology / caveats lists */
+      .study-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+      .study-list li {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 12px 15px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+      .study-list li strong { color: var(--text); }
+      .study-list.caveats li { border-left: 3px solid #f0a868; }
+      .study-list code { font-size: 0.9em; }
+
+      /* repositories */
+      .study-repos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .study-repos li {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+      .study-repos .name { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
+      .study-repos a { color: var(--accent); text-decoration: none; word-break: break-all; font-size: 12px; }
+      .study-repos a:hover { color: var(--accent2); text-decoration: underline; }
+
+      /* prominent value-first CTA box */
+      .study-cta {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(109, 139, 255, 0.08), rgba(109, 139, 255, 0.02));
+        padding: 26px 24px;
+        margin: 40px 0;
+        text-align: center;
+      }
+      .study-cta h2 { font-size: 20px; margin: 0 0 10px; letter-spacing: -0.01em; }
+      .study-cta p { color: var(--muted); font-size: 14.5px; line-height: 1.6; max-width: 640px; margin: 0 auto 18px; }
+      .study-cta p strong { color: var(--text); }
+
+      /* estimate disclaimer */
+      .study-disclaimer {
+        color: #6b7287;
+        font-size: 12.5px;
+        line-height: 1.6;
+        max-width: 760px;
+        margin: 0 auto;
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+      .study-disclaimer strong { color: var(--muted); }
+
+      @media (max-width: 760px) {
+        .study-findings { grid-template-columns: 1fr; }
+        .study-repos { grid-template-columns: 1fr; }
+        .study-section > h2 { font-size: 19px; }
+        .study-stat .n { font-size: 22px; }
+      }
+    </style>
+  </head>
+  <body class="study">
+    <main>
+      <!-- ── HERO ──────────────────────────────────────────────── -->
+      <section class="tp-hero">
+        <div class="badge">
+          <a class="study-back" href="../">← AgentLoop · Agent Token Profiler</a>
+        </div>
+        <h1>The Hidden Token Tax: What Real AI Agents Actually Cost Per Turn</h1>
+        <p class="study-lede">
+          GitHub's MCP server re-sends <span class="hot">3,546 tokens</span> of tool schemas on
+          <strong>every single turn</strong> — that's <span class="hot">$12.89 per 1,000 turns</span>
+          on Claude Sonnet, billed before the model reads a word of the user's question. We measured
+          <strong>13 real open-source AI agents</strong> (79 tools total): the median agent's invisible
+          per-turn overhead is <span class="hot">9.6× larger</span> than the user's actual request.
+        </p>
+
+        <div class="study-stats">
+          <div class="study-stat">
+            <div class="n">3,546</div>
+            <div class="l">tokens GitHub's MCP server re-sends every turn</div>
+          </div>
+          <div class="study-stat">
+            <div class="n">9.6×</div>
+            <div class="l">median overhead vs. a real user request</div>
+          </div>
+          <div class="study-stat">
+            <div class="n">35×</div>
+            <div class="l">spread, leanest agent to most bloated</div>
+          </div>
+          <div class="study-stat">
+            <div class="n">79</div>
+            <div class="l">tools measured across 13 projects</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── THESIS ────────────────────────────────────────────── -->
+      <section class="study-section">
+        <h2>The thesis</h2>
+        <p class="study-sub">
+          An AI agent re-sends its entire system prompt <strong>plus every tool/function schema</strong>
+          on <em>every single turn</em>. That fixed payload is billed as input tokens on each request —
+          invisibly — until the bill arrives. We measured it across 13 real open-source projects
+          (79 tools total).
+        </p>
+      </section>
+
+      <!-- ── TOP FINDINGS ──────────────────────────────────────── -->
+      <section class="study-section">
+        <h2>Top findings</h2>
+        <p class="study-sub">Six things the data makes hard to argue with.</p>
+        <div class="study-findings">
+          <div class="study-find">
+            <span class="num">1</span>
+            <span class="lead">GitHub's MCP server carries 3,546 tokens of tool schemas on every turn — $12.89 per 1,000 conversation turns on Sonnet, paid before the model reads a word of the user's question.</span>
+            <p>
+              Of that, $10.64 is pure schema input; the 150-token reply is the cheap part. 26 tools is
+              all it takes to make the plumbing cost more than the work.
+            </p>
+          </div>
+          <div class="study-find">
+            <span class="num">2</span>
+            <span class="lead">The median agent's invisible per-turn overhead is 547 tokens — against a realistic 57-token user request, that's 9.6× larger than the question itself, and 91% of the entire input.</span>
+            <p>Across all 13: min 101 / median 547 / max 3,546 tokens.</p>
+          </div>
+          <div class="study-find">
+            <span class="num">3</span>
+            <span class="lead">The fattest single tool is 827 tokens — bigger than the entire multi-tool schema set of 8 of the 12 tool-providers measured.</span>
+            <p>
+              It's <code>sequentialthinking</code> from the official MCP server: a 565-token
+              natural-language description wrapped around a tiny 9-field schema. A single verbose tool
+              can out-weigh a whole toolbox.
+            </p>
+          </div>
+          <div class="study-find">
+            <span class="num">4</span>
+            <span class="lead">A 35× spread separates the leanest agent from the most bloated.</span>
+            <p>
+              GitHub's 3,546-token overhead is 35.1× the AWS-KB server's 101 — $12.89 vs $2.55 per 1k
+              turns. Same pricing, same tokenizer. Bloat is a design choice, not a tax of nature.
+            </p>
+          </div>
+          <div class="study-find">
+            <span class="num">5</span>
+            <span class="lead">Across all 79 tools, the average tool costs 123 tokens (median 103) — call it ~100–125 tokens of permanent, per-turn rent per tool you bolt on.</span>
+            <p>Ten tools ≈ a fixed ~1,000-token tax per turn before anything happens.</p>
+          </div>
+          <div class="study-find">
+            <span class="num">6</span>
+            <span class="lead">How you serialize the schema silently moves the bill ~20%.</span>
+            <p>
+              The identical fetch tool is 236 tokens compact vs 288 pretty-printed — a 22% swing from
+              whitespace alone. Pydantic auto-adds a <code>title</code> to every field;
+              zod-to-json-schema appends <code>$schema</code> and <code>additionalProperties</code> —
+              invisible tokens nobody wrote, billed every turn.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VALUE-FIRST CTA ───────────────────────────────────── -->
+      <section class="study-cta">
+        <h2>Measure your own agent</h2>
+        <p>
+          Every number here is an <strong>estimate from the same method</strong> as the free Agent Token
+          Profiler — measure YOUR agent's per-turn cost in your browser (no signup, no key):
+        </p>
+        <a class="btn primary" href="https://mnifzied-create.github.io/agentloop/">
+          Open the free Agent Token Profiler →
+        </a>
+      </section>
+
+      <!-- ── DATASET ───────────────────────────────────────────── -->
+      <section class="study-section">
+        <h2>The dataset</h2>
+        <p class="study-sub">
+          13 real open-source agents, 79 tools. <strong>Overhead / turn</strong> is the fixed payload
+          re-sent on every request; <strong>$/1k turns</strong> projects that across 1,000 turns plus a
+          modeled 150-token reply.
+        </p>
+        <div class="study-table-wrap">
+          <table class="study-data">
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Type</th>
+                <th class="num">System tok</th>
+                <th class="num">Schema tok</th>
+                <th class="num">#Tools</th>
+                <th class="num">Overhead / turn</th>
+                <th>Fattest single tool (tok)</th>
+                <th class="num">$/1k turns Sonnet</th>
+                <th class="num">$/1k turns Haiku</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="agent">GitHub MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">3,546</td>
+                <td class="num">26</td>
+                <td class="num">3,546</td>
+                <td class="fat"><code>create_pull_request_review</code> (360)</td>
+                <td class="num cost">$12.89</td>
+                <td class="num">$4.30</td>
+              </tr>
+              <tr>
+                <td class="agent">bolt.new</td>
+                <td class="type">prompt-embedded coding agent</td>
+                <td class="num">3,118</td>
+                <td class="num">0</td>
+                <td class="num">0 (in-prose)</td>
+                <td class="num">3,118</td>
+                <td class="fat">— (tools described in prompt)</td>
+                <td class="num cost">$11.60</td>
+                <td class="num">$3.87</td>
+              </tr>
+              <tr>
+                <td class="agent">GitLab MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">1,194</td>
+                <td class="num">9</td>
+                <td class="num">1,194</td>
+                <td class="fat"><code>push_files</code> (175)</td>
+                <td class="num cost">$5.83</td>
+                <td class="num">$1.94</td>
+              </tr>
+              <tr>
+                <td class="agent">Git MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">1,117</td>
+                <td class="num">12</td>
+                <td class="num">1,117</td>
+                <td class="fat"><code>git_log</code> (261)</td>
+                <td class="num cost">$5.60</td>
+                <td class="num">$1.87</td>
+              </tr>
+              <tr>
+                <td class="agent">Sequential Thinking MCP server</td>
+                <td class="type">MCP server</td>
+                <td class="num">0</td>
+                <td class="num">827</td>
+                <td class="num">1</td>
+                <td class="num">827</td>
+                <td class="fat"><code>sequentialthinking</code> (827)</td>
+                <td class="num cost">$4.73</td>
+                <td class="num">$1.58</td>
+              </tr>
+              <tr>
+                <td class="agent">Slack MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">679</td>
+                <td class="num">8</td>
+                <td class="num">679</td>
+                <td class="fat"><code>slack_reply_to_thread</code> (124)</td>
+                <td class="num cost">$4.29</td>
+                <td class="num">$1.43</td>
+              </tr>
+              <tr>
+                <td class="agent">Google Maps MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">547</td>
+                <td class="num">7</td>
+                <td class="num">547</td>
+                <td class="fat"><code>maps_distance_matrix</code> (124)</td>
+                <td class="num cost">$3.89</td>
+                <td class="num">$1.30</td>
+              </tr>
+              <tr>
+                <td class="agent">Puppeteer MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">538</td>
+                <td class="num">7</td>
+                <td class="num">538</td>
+                <td class="fat"><code>puppeteer_screenshot</code> (142)</td>
+                <td class="num cost">$3.86</td>
+                <td class="num">$1.29</td>
+              </tr>
+              <tr>
+                <td class="agent">Anthropic quickstarts agent</td>
+                <td class="type">reference agent toolkit</td>
+                <td class="num">0</td>
+                <td class="num">365</td>
+                <td class="num">3</td>
+                <td class="num">365</td>
+                <td class="fat"><code>file_write</code> (152)</td>
+                <td class="num cost">$3.35</td>
+                <td class="num">$1.12</td>
+              </tr>
+              <tr>
+                <td class="agent">Brave Search MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">317</td>
+                <td class="num">2</td>
+                <td class="num">317</td>
+                <td class="fat"><code>brave_web_search</code> (161)</td>
+                <td class="num cost">$3.20</td>
+                <td class="num">$1.07</td>
+              </tr>
+              <tr>
+                <td class="agent">Time MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">237</td>
+                <td class="num">2</td>
+                <td class="num">237</td>
+                <td class="fat"><code>convert_time</code> (159)</td>
+                <td class="num cost">$2.96</td>
+                <td class="num">$0.99</td>
+              </tr>
+              <tr>
+                <td class="agent">Fetch MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">236</td>
+                <td class="num">1</td>
+                <td class="num">236</td>
+                <td class="fat"><code>fetch</code> (236)</td>
+                <td class="num cost">$2.96</td>
+                <td class="num">$0.99</td>
+              </tr>
+              <tr>
+                <td class="agent">AWS KB Retrieval MCP server</td>
+                <td class="type">MCP server (tool provider)</td>
+                <td class="num">0</td>
+                <td class="num">101</td>
+                <td class="num">1</td>
+                <td class="num">101</td>
+                <td class="fat"><code>retrieve_from_aws_kb</code> (101)</td>
+                <td class="num cost">$2.55</td>
+                <td class="num">$0.85</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="study-scroll-hint">Scroll the table sideways on mobile to see every column.</p>
+
+        <div class="study-note">
+          <strong>Two archetypes:</strong> MCP servers carry zero system prompt — they're host-agnostic
+          tool providers, so their per-turn tax is pure schema (and it stacks: attach three servers, pay
+          all three, every turn). bolt.new is the opposite — no function-calling API at all; its tools
+          are described in prose inside a ~3,100-token system prompt. Both pay the same fundamental tax:
+          a fixed payload re-sent every turn.
+        </div>
+      </section>
+
+      <!-- ── METHODOLOGY ───────────────────────────────────────── -->
+      <section class="study-section">
+        <h2>Methodology</h2>
+        <p class="study-sub">Every number reproducible.</p>
+        <ul class="study-list">
+          <li>
+            <strong>Tokenizer:</strong> o200k_base (GPT-4o BPE) via <code>gpt-tokenizer</code>. An
+            ESTIMATE for Claude (Anthropic's differs a few %), applied identically to every agent so
+            cross-agent comparisons are fair. Cross-validated against Python <code>tiktoken</code>
+            (o200k_base) — identical counts to the token.
+          </li>
+          <li>
+            <strong>A "tool"</strong> = the object the model sees
+            (<code>{name, description, input_schema}</code>) serialized to compact JSON, as the SDKs
+            send the <code>tools</code> array.
+          </li>
+          <li>
+            <strong>Schema fidelity:</strong> Pydantic models re-run through
+            <code>model_json_schema()</code>; zod schemas through <code>zod-to-json-schema</code>;
+            literal-JSON schemas extracted verbatim.
+          </li>
+          <li>
+            <strong>Cost model:</strong> per-turn input = fixed overhead; per-turn output = a modeled
+            150-token reply. Sonnet $3/M in, $15/M out; Haiku $1/M in, $5/M out. Projected over 1,000
+            turns.
+          </li>
+          <li>
+            <strong>Pinned sources:</strong> modelcontextprotocol/servers @ f5054df1fb86;
+            servers-archived @ 9be4674d1ddf; anthropics/anthropic-quickstarts @ f37f1685e256;
+            stackblitz/bolt.new @ eda10b121221.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ── CAVEATS ───────────────────────────────────────────── -->
+      <section class="study-section">
+        <h2>Caveats</h2>
+        <p class="study-sub">Stated honestly — the credibility lives here.</p>
+        <ul class="study-list caveats">
+          <li>
+            Tokenizer is a Claude estimate (o200k_base is GPT's); absolute dollar figures carry a
+            few-percent error bar. Applied uniformly, so relative comparisons and structural conclusions
+            are robust.
+          </li>
+          <li>
+            Provider-side tool-block scaffolding not modeled; real bills will be marginally higher.
+          </li>
+          <li>
+            zod/Pydantic schemas are reconstructed via the same converters the servers use, not
+            byte-captured; a few tokens may differ. Literal-JSON schemas are verbatim/exact.
+          </li>
+          <li>
+            Schema-derived tools only — agents whose schemas are generated at runtime from code we
+            couldn't reproduce exactly (e.g. Cline, gpt-researcher, OpenAI Swarm, Codex) were excluded
+            rather than guessed. Cline in particular likely exceeds bolt.new but requires running its
+            build to measure.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ── CITED REPOSITORIES ────────────────────────────────── -->
+      <section class="study-section">
+        <h2>Cited repositories</h2>
+        <p class="study-sub">Every agent measured, linked to the exact source.</p>
+        <ul class="study-repos">
+          <li>
+            <span class="name">GitHub MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/github">github.com/modelcontextprotocol/servers-archived/tree/main/src/github</a>
+          </li>
+          <li>
+            <span class="name">GitLab MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/gitlab">github.com/modelcontextprotocol/servers-archived/tree/main/src/gitlab</a>
+          </li>
+          <li>
+            <span class="name">Git MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/git">github.com/modelcontextprotocol/servers/tree/main/src/git</a>
+          </li>
+          <li>
+            <span class="name">Sequential Thinking MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking">github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking</a>
+          </li>
+          <li>
+            <span class="name">Slack MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/slack">github.com/modelcontextprotocol/servers-archived/tree/main/src/slack</a>
+          </li>
+          <li>
+            <span class="name">Google Maps MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/google-maps">github.com/modelcontextprotocol/servers-archived/tree/main/src/google-maps</a>
+          </li>
+          <li>
+            <span class="name">Puppeteer MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/puppeteer">github.com/modelcontextprotocol/servers-archived/tree/main/src/puppeteer</a>
+          </li>
+          <li>
+            <span class="name">Brave Search MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/brave-search">github.com/modelcontextprotocol/servers-archived/tree/main/src/brave-search</a>
+          </li>
+          <li>
+            <span class="name">AWS KB Retrieval MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers-archived/tree/main/src/aws-kb-retrieval-server">github.com/modelcontextprotocol/servers-archived/tree/main/src/aws-kb-retrieval-server</a>
+          </li>
+          <li>
+            <span class="name">Fetch MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/fetch">github.com/modelcontextprotocol/servers/tree/main/src/fetch</a>
+          </li>
+          <li>
+            <span class="name">Time MCP</span>
+            <a href="https://github.com/modelcontextprotocol/servers/tree/main/src/time">github.com/modelcontextprotocol/servers/tree/main/src/time</a>
+          </li>
+          <li>
+            <span class="name">Anthropic quickstarts agent</span>
+            <a href="https://github.com/anthropics/anthropic-quickstarts/tree/main/agents">github.com/anthropics/anthropic-quickstarts/tree/main/agents</a>
+          </li>
+          <li>
+            <span class="name">bolt.new</span>
+            <a href="https://github.com/stackblitz/bolt.new">github.com/stackblitz/bolt.new</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ── ESTIMATE DISCLAIMER ───────────────────────────────── -->
+      <section class="study-section">
+        <p class="study-disclaimer">
+          <strong>These are estimates.</strong> Token counts are computed with a GPT BPE tokenizer
+          (o200k_base); Anthropic's tokenizer differs by a few percent, so absolute dollar figures carry
+          a few-percent error bar. Applied uniformly across every agent, so the relative comparisons and
+          structural conclusions are robust — but verify against your provider's real pricing and
+          tokenizer before budgeting on any single figure.
+        </p>
+      </section>
+
+      <!-- ── FOOTER FUNNEL ─────────────────────────────────────── -->
+      <section class="tp-cta">
+        <p class="tp-cta-connect">
+          Built by <strong>AgentLoop</strong> — a readable, MIT Claude-agent starter.
+        </p>
+        <p>
+          The full agent loop — streaming + tool use — in ~150 lines. No framework, no 40-file SaaS
+          template to gut. The same method behind this study powers the free Agent Token Profiler.
+        </p>
+        <div class="tp-cta-links">
+          <a class="btn" href="https://github.com/mnifzied-create/agentloop">
+            ★ Free MIT core on GitHub
+          </a>
+          <a class="btn primary" href="https://ko-fi.com/s/7306cb3140">
+            AgentLoop Pro — pay what you want, from $9
+          </a>
+        </div>
+      </section>
+
+      <footer class="tp-footer">
+        <a href="../">← Agent Token Profiler</a>
+        <span>Estimates only · cited, reproducible, every number from the source</span>
+      </footer>
+    </main>
+  </body>
+</html>

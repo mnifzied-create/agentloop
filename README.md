@@ -9,6 +9,8 @@ The full agent loop — streaming + tool use — in ~150 lines. No framework, no
 
 🆓 **Free tool — [Agent Token Profiler](https://mnifzied-create.github.io/agentloop/):** see what your agent loop *really* costs per turn (and which tool is bloating it). Runs in your browser — no signup, no key.
 
+📊 **New study — [The Hidden Token Tax](https://mnifzied-create.github.io/agentloop/token-tax/):** we measured what 13 real open-source AI agents (79 tools) actually cost per turn — GitHub's MCP server re-sends 3,546 tokens *every turn*.
+
 </div>
 
 ---
