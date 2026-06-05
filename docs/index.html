@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Token Profiler — AgentLoop</title>
+    <meta
+      name="description"
+      content="See the hidden per-turn cost of your AI agent. Your agent re-sends the system prompt and every tool schema on every turn — paste your setup and get a per-turn token breakdown, a projection across models, and where routing the easy turns to a cheaper model saves money. Runs entirely in your browser, no key, no upload."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Agent Token Profiler — AgentLoop" />
+    <meta
+      property="og:description"
+      content="Your agent re-sends the system prompt and every tool schema on every turn — a cost that's invisible until the bill arrives. See the per-turn breakdown and where cheaper routing pays off. Runs entirely in your browser."
+    />
+    <meta property="og:site_name" content="AgentLoop" />
+    <meta property="og:url" content="https://mnifzied-create.github.io/agentloop/" />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="tp">
+      <section class="tp-hero">
+        <div class="badge">Free · runs entirely in your browser · no key, no upload</div>
+        <h1>Agent Token Profiler</h1>
+        <p class="sub">
+          Your agent re-sends the system prompt and <em>every tool schema</em> on every turn — a cost
+          that's invisible until the bill arrives. Paste your setup below and see the per-turn
+          breakdown, a projection across <span id="hero-turns">100</span> turns, and where routing the
+          easy turns to a cheaper model would save you money.
+        </p>
+        <p class="tp-estimate-note">
+          Token counts are an <strong>estimate</strong> (computed locally with a GPT BPE tokenizer;
+          Anthropic's differs by a few percent). Prices are approximate — see the note by the table.
+        </p>
+      </section>
+
+      <div class="tp-grid">
+        <!-- ── INPUTS ─────────────────────────────────────────── -->
+        <section class="tp-panel">
+          <h2>Your agent setup</h2>
+
+          <label class="tp-field">
+            <span>System prompt</span>
+            <textarea id="systemPrompt" rows="6"></textarea>
+          </label>
+
+          <label class="tp-field">
+            <span>
+              Tool definitions <em>(JSON array, Anthropic-style)</em>
+            </span>
+            <textarea id="toolJson" class="mono" rows="10" spellcheck="false"></textarea>
+            <span id="toolErr" class="tp-err" hidden></span>
+          </label>
+
+          <div class="tp-field">
+            <span>
+              Sample tool outputs <em>(what a tool returns per call)</em>
+            </span>
+            <div id="toolOutputs"></div>
+            <button type="button" class="tp-add" id="addOutput">+ add another sample output</button>
+          </div>
+
+          <div class="tp-row2">
+            <label class="tp-field">
+              <span>Avg tool calls / turn</span>
+              <input id="toolCallsPerTurn" type="number" min="0" step="1" />
+            </label>
+            <label class="tp-field">
+              <span>Turns to project</span>
+              <input id="turns" type="number" min="1" step="1" />
+            </label>
+          </div>
+
+          <label class="tp-field">
+            <span>Primary model</span>
+            <select id="primaryModel"></select>
+          </label>
+        </section>
+
+        <!-- ── RESULTS ────────────────────────────────────────── -->
+        <section class="tp-panel">
+          <h2>Per-turn token breakdown</h2>
+          <p class="tp-mini" id="perTurnSummary"></p>
+          <div class="tp-bars" id="bars"></div>
+
+          <h2 class="tp-mt">Projected over <span id="proj-turns">100</span> turns</h2>
+          <table class="tp-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Total tokens</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody id="projBody"></tbody>
+          </table>
+
+          <div class="tp-savings" id="savings"></div>
+
+          <p class="tp-pricing-note">
+            Pricing = approximate public list prices, mid-2026, blended input/output per 1M tokens.
+            <strong> Verify with the provider</strong> — edit the values in
+            <code>lib/token-profiler/pricing.ts</code> to match your real rates.
+          </p>
+        </section>
+      </div>
+
+      <!-- ── BLOAT FLAGS ─────────────────────────────────────── -->
+      <section class="tp-panel tp-bloat">
+        <h2>Bloat flags</h2>
+        <div id="bloat"></div>
+      </section>
+
+      <!-- ── HOW THE MATH WORKS ──────────────────────────────── -->
+      <section class="tp-panel tp-math">
+        <h2>The math, in the open</h2>
+        <ul id="mathList"></ul>
+      </section>
+
+      <!-- ── BRIDGE / CTA ────────────────────────────────────── -->
+      <section class="tp-cta">
+        <p>
+          Token metering is 1 of 8 production patterns in AgentLoop. The free MIT core is the readable
+          agent loop you can build on; <strong>AgentLoop Pro</strong> wires up all eight — parallel
+          tools, persistent memory, retries, rate limiting, approval gates, evals, token metering, and a
+          multi-provider seam (so the routing above is one config change, not a rewrite).
+        </p>
+        <div class="tp-cta-links">
+          <a class="btn" href="https://github.com/mnifzied-create/agentloop">
+            ★ Free MIT core on GitHub
+          </a>
+          <a class="btn primary" href="https://ko-fi.com/s/7306cb3140">
+            AgentLoop Pro — pay what you want, from $9
+          </a>
+        </div>
+      </section>
+
+      <footer class="tp-footer">
+        <a href="https://github.com/mnifzied-create/agentloop">← AgentLoop</a>
+        <span>Estimates only · all computation is local to your browser</span>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
