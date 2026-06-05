@@ -7,6 +7,8 @@ The full agent loop — streaming + tool use — in ~150 lines. No framework, no
 
 [Quickstart](#quickstart) · [How it works](#how-it-works) · [Add a tool](#add-your-own-tool) · [Pro](#-agentloop-pro)
 
+🆓 **Free tool — [Agent Token Profiler](https://mnifzied-create.github.io/agentloop/):** see what your agent loop *really* costs per turn (and which tool is bloating it). Runs in your browser — no signup, no key.
+
 </div>
 
 ---
@@ -92,7 +94,7 @@ You shipped your agent. Then real users hit it — and **eight things broke that
 
 **AgentLoop Pro is those eight fixes — each solved correctly and minimally**, so you drop them in instead of spending a week rediscovering them (and getting the subtle parts wrong). Same teach-by-reading philosophy as the core, leveled up to production.
 
-> The one that quietly costs the most: **token bloat.** Your bill balloons and you can't see *which* tool is eating the context. Pro meters tokens per run and per tool — and the same seam lets you route cheap turns to a cheaper model.
+> The one that quietly costs the most: **token bloat.** Your bill balloons and you can't see *which* tool is eating the context. Pro meters tokens per run and per tool — and the same seam lets you route cheap turns to a cheaper model. **[→ Try the free Token Profiler](https://mnifzied-create.github.io/agentloop/)** to see what your own loop costs.
 
 | Pattern | Free | **Pro** |
 |---|:---:|:---:|
