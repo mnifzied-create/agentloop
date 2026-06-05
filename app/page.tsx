@@ -6,7 +6,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 // Filled at publish (kept in sync with the README).
 const GITHUB_URL = "https://github.com/mnifzied-create/agentloop";
-const KOFI_URL = "https://ko-fi.com/aimnifzied";
+const KOFI_URL = "https://ko-fi.com/s/7306cb3140";
 const DEPLOY_URL =
   "https://vercel.com/new/clone?repository-url=https://github.com/mnifzied-create/agentloop";
 
@@ -80,6 +80,10 @@ export default function Home() {
           <a className="btn" href={DEPLOY_URL}>Deploy to Vercel</a>
           <a className="btn ghost" href="#pro">AgentLoop Pro →</a>
         </div>
+        <p className="note" style={{ marginTop: "1rem" }}>
+          🧮 New free tool: <a href="/token-profiler">the Agent Token Profiler</a> — see what your
+          agent loop really costs per turn, and which tool is quietly bloating it.
+        </p>
       </section>
 
       <section className="demo-wrap">
@@ -146,8 +150,10 @@ export default function Home() {
           {[
             "Parallel & multi-tool orchestration",
             "Persistent memory (SQLite threads)",
-            "Structured outputs (typed JSON)",
+            "Token & cost metering (usage per run)",
+            "Multi-provider — Claude or any model",
             "Retries, timeouts & error handling",
+            "Structured outputs (typed JSON)",
             "Human-in-the-loop approval gate",
             "Sub-agents / delegation",
             "Eval harness (catch regressions)",
@@ -156,7 +162,7 @@ export default function Home() {
             <div key={f} className="feat">✓ {f}</div>
           ))}
         </div>
-        <a className="btn primary big" href={KOFI_URL}>Get AgentLoop Pro — $29 one-time</a>
+        <a className="btn primary big" href={KOFI_URL}>Get AgentLoop Pro — pay what you want, from $9</a>
       </section>
 
       <footer>
