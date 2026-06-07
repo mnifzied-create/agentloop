@@ -692,6 +692,112 @@
         </p>
       </section>
 
+      <!-- ── FAQ (AEO — exact-match queries) ──────────────────── -->
+      <section class="study-section tp-faq">
+        <h2>Frequently asked: agent &amp; MCP token costs</h2>
+
+        <h3>How many tokens does the GitHub MCP server use per turn?</h3>
+        <p>
+          The GitHub MCP server's 26 tool schemas total <strong>3,546 tokens</strong>, re-sent on every
+          turn — about <strong>$12.89 per 1,000 turns</strong> on Claude Sonnet ($4.30 on Haiku), billed
+          before the model reads the user's question. It was the most expensive of the 13 agents measured.
+        </p>
+
+        <h3>What does the average agent/MCP tool cost in tokens?</h3>
+        <p>
+          Across 79 tools in 13 servers, the average tool is <strong>123 tokens</strong> (median 103) —
+          roughly 100–125 tokens of permanent, per-turn overhead for every tool you add. Ten tools ≈ a
+          fixed ~1,000-token tax per turn before anything happens.
+        </p>
+
+        <h3>How large is the typical agent's hidden per-turn overhead?</h3>
+        <p>
+          The median agent re-sends <strong>547 tokens</strong> of system prompt + tool schemas every turn
+          (min 101, max 3,546) — about <strong>9.6× a realistic 57-token user request</strong>, i.e. ~91%
+          of the input before the user has spoken.
+        </p>
+
+        <h3>What is the most expensive single MCP tool?</h3>
+        <p>
+          <code>sequentialthinking</code> from the official MCP servers repo: <strong>827 tokens in one
+          tool</strong>, almost all of it a ~565-token natural-language description. It is larger than the
+          entire toolset of 8 of the 12 multi-tool servers measured.
+        </p>
+
+        <h3>Does pretty-printing a tool's JSON schema increase token cost?</h3>
+        <p>
+          Yes — by about <strong>20%</strong>. The identical Fetch MCP tool is 236 tokens compact vs 288
+          pretty-printed. Pydantic auto-adds a <code>title</code> to every field and
+          <code>zod-to-json-schema</code> appends <code>$schema</code>/<code>additionalProperties</code> —
+          invisible tokens nobody wrote, billed every turn.
+        </p>
+
+        <h3>How do I reduce my agent's tool-schema token cost?</h3>
+        <p>
+          Serialize schemas as compact JSON and drop auto-added fields, trim descriptions to what actually
+          aids tool selection, load tools on demand (progressive disclosure), and route easy turns to a
+          cheaper model like Claude Haiku. Measure first with the free
+          <a href="https://mnifzied-create.github.io/agentloop/">Agent Token Profiler</a>.
+        </p>
+
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How many tokens does the GitHub MCP server use per turn?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The GitHub MCP server's 26 tool schemas total 3,546 tokens, re-sent on every turn — about $12.89 per 1,000 turns on Claude Sonnet ($4.30 on Haiku), billed before the model reads the user's question. It was the most expensive of the 13 agents measured."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What does the average agent/MCP tool cost in tokens?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Across 79 tools in 13 servers, the average tool is 123 tokens (median 103) — roughly 100–125 tokens of permanent, per-turn overhead for every tool you add. Ten tools is a fixed ~1,000-token tax per turn before anything happens."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How large is the typical agent's hidden per-turn overhead?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The median agent re-sends 547 tokens of system prompt plus tool schemas every turn (min 101, max 3,546) — about 9.6x a realistic 57-token user request, roughly 91% of the input before the user has spoken."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the most expensive single MCP tool?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "sequentialthinking from the official MCP servers repo: 827 tokens in one tool, almost all of it a ~565-token natural-language description. It is larger than the entire toolset of 8 of the 12 multi-tool servers measured."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does pretty-printing a tool's JSON schema increase token cost?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, by about 20%. The identical Fetch MCP tool is 236 tokens compact vs 288 pretty-printed. Pydantic auto-adds a title to every field and zod-to-json-schema appends $schema/additionalProperties — invisible tokens nobody wrote, billed every turn."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I reduce my agent's tool-schema token cost?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Serialize schemas as compact JSON and drop auto-added fields, trim descriptions to what actually aids tool selection, load tools on demand (progressive disclosure), and route easy turns to a cheaper model like Claude Haiku. Measure first with the free Agent Token Profiler."
+                }
+              }
+            ]
+          }
+        </script>
+      </section>
+
       <!-- ── FOOTER FUNNEL ─────────────────────────────────────── -->
       <section class="tp-cta">
         <p class="tp-cta-connect">
