@@ -158,6 +158,7 @@ code {
 .tp-chip { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 999px; padding: 1px 7px; margin-right: 8px; }
 .c-schema { background: rgba(240,168,104,0.15); color: #f0a868; }
 .c-output { background: rgba(52,211,153,0.15); color: var(--ok); }
+.c-cruft { background: rgba(248,113,113,0.15); color: #f87171; }
 .tp-flag-name { color: var(--text); font-weight: 600; }
 .tp-math ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
 .tp-math li { font-size: 13px; color: var(--muted); line-height: 1.55; }

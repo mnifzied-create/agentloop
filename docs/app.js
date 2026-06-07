@@ -179,6 +179,81 @@ function bloatFlags(inp, proj, threshold = BLOAT_THRESHOLD_TOKENS) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Serialization cruft — non-semantic tokens re-sent every turn (from the study).
+//  Measured by strip-and-recount so the saving is exact, not estimated.
+// ─────────────────────────────────────────────────────────────────────────────
+function serializationFlags(inp) {
+  const flags = [];
+  const raw = inp.toolJson;
+  if (!raw || !raw.trim()) return flags;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return flags;
+  }
+  const inputRate = PRICING[inp.primaryModel].inputPerMTok / 1_000_000;
+  const turns = inp.turns;
+  const compactTokens = countTokens(JSON.stringify(parsed));
+
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const stripKeys = (o, keys) => {
+    if (Array.isArray(o)) o.forEach((x) => stripKeys(x, keys));
+    else if (o && typeof o === "object") {
+      for (const k of Object.keys(o)) {
+        if (keys.includes(k)) delete o[k];
+        else stripKeys(o[k], keys);
+      }
+    }
+    return o;
+  };
+  const countKey = (o, key) => {
+    let n = 0;
+    const walk = (x) => {
+      if (Array.isArray(x)) x.forEach(walk);
+      else if (x && typeof x === "object")
+        for (const k of Object.keys(x)) {
+          if (k === key) n++;
+          walk(x[k]);
+        }
+    };
+    walk(o);
+    return n;
+  };
+  const savingFor = (keys) => {
+    const stripped = countTokens(JSON.stringify(stripKeys(clone(parsed), keys)));
+    return compactTokens - stripped;
+  };
+
+  const nSchema = countKey(parsed, "$schema");
+  const nAddl = countKey(parsed, "additionalProperties");
+  if (nSchema + nAddl > 0) {
+    const delta = savingFor(["$schema", "additionalProperties"]);
+    if (delta >= 2)
+      flags.push({
+        label: "Converter artifacts",
+        detail: `${nSchema} <code>$schema</code> + ${nAddl} <code>additionalProperties</code> key(s) — typical of zod-to-json-schema. Strip <code>$schema</code> freely; drop <code>additionalProperties</code> if you don't need strict validation.`,
+        tokens: delta,
+        saving: delta * turns * inputRate,
+      });
+  }
+
+  const nTitle = countKey(parsed, "title");
+  if (nTitle > 0) {
+    const delta = savingFor(["title"]);
+    if (delta >= 2)
+      flags.push({
+        label: "Auto-added title fields",
+        detail: `${nTitle} <code>title</code> field(s) — Pydantic adds one per field automatically; usually safe to drop if nothing relies on them.`,
+        tokens: delta,
+        saving: delta * turns * inputRate,
+      });
+  }
+
+  return flags.sort((a, b) => b.saving - a.saving);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  defaults.ts  (ported verbatim)
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful support agent for an e-commerce store.
@@ -618,8 +693,10 @@ function recompute() {
       `grows — 2 of AgentLoop Pro's 8 patterns. Pay what you want, from $9.`;
 
   // Bloat flags
+  const cruft = serializationFlags(inputs);
+  let bloatHtml;
   if (flags.length === 0) {
-    el.bloat.innerHTML = `<p class="tp-ok">✓ No single tool schema or output is over ~${BLOAT_THRESHOLD} tokens. Nothing is obviously inflating every turn.</p>`;
+    bloatHtml = `<p class="tp-ok">✓ No single tool schema or output is over ~${BLOAT_THRESHOLD} tokens. Nothing is obviously inflating every turn.</p>`;
   } else {
     const items = flags
       .map(
@@ -636,10 +713,27 @@ function recompute() {
         </li>`,
       )
       .join("");
-    el.bloat.innerHTML = `
+    bloatHtml = `
       <p class="tp-mini">These items are large enough to weigh on every turn they appear in. Trimming or summarizing them compounds across the whole projection:</p>
       <ul class="tp-flag-list">${items}</ul>`;
   }
+  if (cruft.length) {
+    const citems = cruft
+      .map(
+        (f) => `
+        <li>
+          <span class="tp-chip c-cruft">cruft</span>
+          <strong>${f.label}</strong> — ${f.detail} <strong>~${fmtTok(
+            f.tokens,
+          )} tok/turn</strong> ≈ <strong>${fmtUsd(f.saving)}</strong> over ${turnsLabel} turns, at zero tool-selection cost.
+        </li>`,
+      )
+      .join("");
+    bloatHtml += `
+      <p class="tp-mini" style="margin-top:16px">Non-semantic <strong>serialization cruft</strong> — tokens nobody authored, re-sent every turn. Stripping these costs <em>zero</em> accuracy (<a href="./token-tax/">the study</a> found this is often ~20% of schema bytes):</p>
+      <ul class="tp-flag-list">${citems}</ul>`;
+  }
+  el.bloat.innerHTML = bloatHtml;
 
   // The math, in the open
   el.mathList.innerHTML = `
