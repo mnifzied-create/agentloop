@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCP Server Token Costs: How Many Tokens Each MCP Server Uses Per Turn — AgentLoop</title>
+    <meta
+      name="description"
+      content="A reference for how many tokens popular MCP servers add to your context every turn. GitHub's MCP server is 3,546 tokens/turn; GitLab 1,194; Slack 679; AWS KB 101. Measured tool-schema overhead across real open-source MCP servers, re-sent on every request."
+    />
+    <link rel="canonical" href="https://mnifzied-create.github.io/agentloop/mcp-token-costs/" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="MCP Server Token Costs: How Many Tokens Each MCP Server Uses Per Turn" />
+    <meta property="og:description" content="GitHub's MCP server adds 3,546 tokens of tool schemas every turn; GitLab 1,194; Slack 679; AWS KB 101. A reference for the per-turn token overhead of popular MCP servers." />
+    <meta property="og:site_name" content="AgentLoop" />
+    <meta property="og:url" content="https://mnifzied-create.github.io/agentloop/mcp-token-costs/" />
+    <meta property="og:image" content="https://mnifzied-create.github.io/agentloop/og-token-tax.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MCP Server Token Costs: How Many Tokens Each MCP Server Uses Per Turn" />
+    <meta name="twitter:description" content="GitHub's MCP server adds 3,546 tokens every turn; GitLab 1,194; Slack 679; AWS KB 101. Per-turn token overhead of popular MCP servers." />
+    <meta name="twitter:image" content="https://mnifzied-create.github.io/agentloop/og-token-tax.png" />
+
+    <link rel="stylesheet" href="../styles.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "How many tokens does the GitHub MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The GitHub MCP server's 26 tool schemas total 3,546 tokens, re-sent on every turn — about $12.89 per 1,000 turns on Claude Sonnet ($4.30 on Haiku). Its fattest single tool is create_pull_request_review (~360 tokens). It is the most expensive MCP server measured." } },
+          { "@type": "Question", "name": "How many tokens does the GitLab MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The GitLab MCP server's 9 tool schemas total 1,194 tokens per turn — about $5.83 per 1,000 turns on Claude Sonnet ($1.94 on Haiku). Its fattest tool is push_files (~175 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Git MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Git MCP server's 12 tool schemas total 1,117 tokens per turn — about $5.60 per 1,000 turns on Claude Sonnet ($1.87 on Haiku). Its fattest tool is git_log (~261 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Sequential Thinking MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Sequential Thinking MCP server is a single tool that costs 827 tokens per turn — about $4.73 per 1,000 turns on Claude Sonnet ($1.58 on Haiku). That one tool is larger than the entire toolset of most multi-tool servers, because of a ~565-token natural-language description." } },
+          { "@type": "Question", "name": "How many tokens does the Slack MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Slack MCP server's 8 tool schemas total 679 tokens per turn — about $4.29 per 1,000 turns on Claude Sonnet ($1.43 on Haiku). Its fattest tool is slack_reply_to_thread (~124 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Google Maps MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Google Maps MCP server's 7 tool schemas total 547 tokens per turn — about $3.89 per 1,000 turns on Claude Sonnet ($1.30 on Haiku). Its fattest tool is maps_distance_matrix (~124 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Puppeteer MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Puppeteer MCP server's 7 tool schemas total 538 tokens per turn — about $3.86 per 1,000 turns on Claude Sonnet ($1.29 on Haiku). Its fattest tool is puppeteer_screenshot (~142 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Brave Search MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Brave Search MCP server's 2 tool schemas total 317 tokens per turn — about $3.20 per 1,000 turns on Claude Sonnet ($1.07 on Haiku). Its fattest tool is brave_web_search (~161 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Time MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Time MCP server's 2 tool schemas total 237 tokens per turn — about $2.96 per 1,000 turns on Claude Sonnet ($0.99 on Haiku). Its fattest tool is convert_time (~159 tokens)." } },
+          { "@type": "Question", "name": "How many tokens does the Fetch MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The Fetch MCP server is a single tool that costs 236 tokens per turn — about $2.96 per 1,000 turns on Claude Sonnet ($0.99 on Haiku)." } },
+          { "@type": "Question", "name": "How many tokens does the AWS KB Retrieval MCP server use per turn?", "acceptedAnswer": { "@type": "Answer", "text": "The AWS KB Retrieval MCP server is a single tool that costs 101 tokens per turn — about $2.55 per 1,000 turns on Claude Sonnet ($0.85 on Haiku). It was the leanest MCP server measured." } },
+          { "@type": "Question", "name": "Do MCP server token costs stack when you attach several servers?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Each attached MCP server's tool schemas are sent on every turn, so the costs add up. Attaching GitHub (3,546) + GitLab (1,194) + Slack (679) means ~5,419 tokens of schema re-sent on every request before the user says anything — most of it irrelevant to any single task." } }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <main class="tp">
+      <section class="tp-hero">
+        <div class="badge">Reference · measured tool-schema overhead · estimates</div>
+        <h1>MCP Server Token Costs</h1>
+        <p class="sub">
+          Every MCP server you attach sends its <em>full tool schemas</em> on every turn — a fixed token
+          cost paid on each request, before the model reads the user's question. Here's how many tokens
+          popular open-source MCP servers add, measured from their actual tool definitions.
+        </p>
+        <p class="sub">
+          From the study <a href="../token-tax/">The Hidden Token Tax</a> (method + caveats there). Costs
+          are blended-rate estimates over 1,000 turns plus a modeled 150-token reply; token counts use a
+          GPT BPE tokenizer (o200k_base) as a consistent estimate for Claude.
+        </p>
+      </section>
+
+      <section class="tp-panel">
+        <h2>Per-turn token cost by MCP server</h2>
+        <table class="tp-table">
+          <thead>
+            <tr><th>MCP server</th><th>#Tools</th><th>Tokens / turn</th><th>$/1k turns (Sonnet)</th><th>$/1k turns (Haiku)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>GitHub</td><td>26</td><td>3,546</td><td>$12.89</td><td>$4.30</td></tr>
+            <tr><td>GitLab</td><td>9</td><td>1,194</td><td>$5.83</td><td>$1.94</td></tr>
+            <tr><td>Git</td><td>12</td><td>1,117</td><td>$5.60</td><td>$1.87</td></tr>
+            <tr><td>Sequential Thinking</td><td>1</td><td>827</td><td>$4.73</td><td>$1.58</td></tr>
+            <tr><td>Slack</td><td>8</td><td>679</td><td>$4.29</td><td>$1.43</td></tr>
+            <tr><td>Google Maps</td><td>7</td><td>547</td><td>$3.89</td><td>$1.30</td></tr>
+            <tr><td>Puppeteer</td><td>7</td><td>538</td><td>$3.86</td><td>$1.29</td></tr>
+            <tr><td>Brave Search</td><td>2</td><td>317</td><td>$3.20</td><td>$1.07</td></tr>
+            <tr><td>Time</td><td>2</td><td>237</td><td>$2.96</td><td>$0.99</td></tr>
+            <tr><td>Fetch</td><td>1</td><td>236</td><td>$2.96</td><td>$0.99</td></tr>
+            <tr><td>AWS KB Retrieval</td><td>1</td><td>101</td><td>$2.55</td><td>$0.85</td></tr>
+          </tbody>
+        </table>
+        <p class="tp-pricing-note">
+          Schema-only overhead (the fixed input re-sent every turn). Real bills are marginally higher
+          (provider tool-block scaffolding not modeled). Measure your own stack with the
+          <a href="../">free Agent Token Profiler</a>.
+        </p>
+      </section>
+
+      <section class="tp-panel tp-faq">
+        <h2>How many tokens does each MCP server use?</h2>
+        <h3>GitHub MCP server</h3>
+        <p>26 tool schemas total <strong>3,546 tokens</strong> per turn — ~$12.89 / 1k turns on Sonnet ($4.30 Haiku). Fattest tool: <code>create_pull_request_review</code> (~360). The most expensive measured.</p>
+        <h3>GitLab MCP server</h3>
+        <p>9 tools, <strong>1,194 tokens</strong> per turn (~$5.83 / 1k Sonnet). Fattest: <code>push_files</code> (~175).</p>
+        <h3>Git MCP server</h3>
+        <p>12 tools, <strong>1,117 tokens</strong> per turn (~$5.60 / 1k Sonnet). Fattest: <code>git_log</code> (~261).</p>
+        <h3>Sequential Thinking MCP server</h3>
+        <p>A single tool at <strong>827 tokens</strong> per turn (~$4.73 / 1k Sonnet) — larger than the entire toolset of most multi-tool servers, thanks to a ~565-token description.</p>
+        <h3>Slack MCP server</h3>
+        <p>8 tools, <strong>679 tokens</strong> per turn (~$4.29 / 1k Sonnet). Fattest: <code>slack_reply_to_thread</code> (~124).</p>
+        <h3>Google Maps MCP server</h3>
+        <p>7 tools, <strong>547 tokens</strong> per turn (~$3.89 / 1k Sonnet). Fattest: <code>maps_distance_matrix</code> (~124).</p>
+        <h3>Puppeteer MCP server</h3>
+        <p>7 tools, <strong>538 tokens</strong> per turn (~$3.86 / 1k Sonnet). Fattest: <code>puppeteer_screenshot</code> (~142).</p>
+        <h3>Brave Search MCP server</h3>
+        <p>2 tools, <strong>317 tokens</strong> per turn (~$3.20 / 1k Sonnet). Fattest: <code>brave_web_search</code> (~161).</p>
+        <h3>Time MCP server</h3>
+        <p>2 tools, <strong>237 tokens</strong> per turn (~$2.96 / 1k Sonnet). Fattest: <code>convert_time</code> (~159).</p>
+        <h3>Fetch MCP server</h3>
+        <p>A single tool at <strong>236 tokens</strong> per turn (~$2.96 / 1k Sonnet).</p>
+        <h3>AWS KB Retrieval MCP server</h3>
+        <p>A single tool at <strong>101 tokens</strong> per turn (~$2.55 / 1k Sonnet) — the leanest measured.</p>
+        <h3>Do these stack across multiple servers?</h3>
+        <p>Yes — every attached server's schemas are sent every turn. GitHub + GitLab + Slack = ~5,419 tokens re-sent on every request, most of it irrelevant to any single task. The fix: scope toolsets, strip serialization cruft, and load tools on demand. See <a href="../token-tax/">the full study</a>.</p>
+      </section>
+
+      <section class="tp-cta">
+        <p>
+          These are fixed per-turn estimates from each server's tool schemas. To see your <em>own</em>
+          stack's per-turn cost — across any combination of servers, models, and tools — paste it into the
+          free profiler.
+        </p>
+        <div class="tp-cta-links">
+          <a class="btn" href="../">★ Free Agent Token Profiler</a>
+          <a class="btn primary" href="https://ko-fi.com/s/7306cb3140">AgentLoop Pro — token metering + routing, from $9</a>
+        </div>
+      </section>
+
+      <footer class="tp-footer">
+        <a href="../token-tax/">← The Hidden Token Tax (full study)</a>
+        <span>Estimates · o200k_base · verify against your provider's pricing</span>
+      </footer>
+    </main>
+  </body>
+</html>
