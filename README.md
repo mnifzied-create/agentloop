@@ -7,7 +7,7 @@ The full agent loop — streaming + tool use — in ~150 lines. No framework, no
 
 [Quickstart](#quickstart) · [How it works](#how-it-works) · [Add a tool](#add-your-own-tool) · [Pro](#-agentloop-pro)
 
-🆓 **Free tool — [Agent Token Profiler](https://mnifzied-create.github.io/agentloop/):** see what your agent loop *really* costs per turn (and which tool is bloating it). Runs in your browser — no signup, no key.
+🆓 **Free tool — [Agent Token Profiler](https://mnifzied-create.github.io/agentloop/):** see what your agent loop *really* costs per turn, which tool is bloating it, and the **serialization cruft** (`$schema`, Pydantic-added `title`) that quietly wastes ~20% — flagged automatically with the exact tokens saved. Runs in your browser — no signup, no key.
 
 📊 **New study — [The Hidden Token Tax](https://mnifzied-create.github.io/agentloop/token-tax/):** we measured what 13 real open-source AI agents (79 tools) actually cost per turn — GitHub's MCP server re-sends 3,546 tokens *every turn*.
 
@@ -96,7 +96,7 @@ You shipped your agent. Then real users hit it — and **eight things broke that
 
 **AgentLoop Pro is those eight fixes — each solved correctly and minimally**, so you drop them in instead of spending a week rediscovering them (and getting the subtle parts wrong). Same teach-by-reading philosophy as the core, leveled up to production.
 
-> The one that quietly costs the most: **token bloat.** Your bill balloons and you can't see *which* tool is eating the context. Pro meters tokens per run and per tool — and the same seam lets you route cheap turns to a cheaper model. **[→ Try the free Token Profiler](https://mnifzied-create.github.io/agentloop/)** to see what your own loop costs.
+> The one that quietly costs the most: **token bloat.** We [measured 13 real agents](https://mnifzied-create.github.io/agentloop/token-tax/) — GitHub's MCP server alone re-sends 3,546 tokens *every turn*, and ~20% of typical schema bytes is pure serialization cruft. Your bill balloons and you can't see *which* tool is eating the context. Pro meters tokens per run and per tool — and the same seam routes cheap turns to a cheaper model. **[→ Try the free Token Profiler](https://mnifzied-create.github.io/agentloop/)** to see (and fix) what your own loop costs.
 
 | Pattern | Free | **Pro** |
 |---|:---:|:---:|
