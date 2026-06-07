@@ -732,6 +732,9 @@ function recompute() {
     bloatHtml += `
       <p class="tp-mini" style="margin-top:16px">Non-semantic <strong>serialization cruft</strong> — tokens nobody authored, re-sent every turn. Stripping these costs <em>zero</em> accuracy (<a href="./token-tax/">the study</a> found this is often ~20% of schema bytes):</p>
       <ul class="tp-flag-list">${citems}</ul>`;
+  } else if (inputs.toolJson && inputs.toolJson.trim()) {
+    bloatHtml += `
+      <p class="tp-mini" style="margin-top:16px">✓ No serialization cruft in these schemas. <span style="opacity:.85">Paste a <strong>zod-</strong> or <strong>Pydantic-generated</strong> schema and this flags the <code>$schema</code>, <code>title</code>, and <code>additionalProperties</code> they auto-add — re-sent every turn at zero accuracy cost (<a href="./token-tax/">why</a>).</span></p>`;
   }
   el.bloat.innerHTML = bloatHtml;
 
