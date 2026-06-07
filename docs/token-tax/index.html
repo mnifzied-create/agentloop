@@ -798,6 +798,42 @@
         </script>
       </section>
 
+      <!-- ── FIX IT (pairs with the profiler's cruft detector) ─── -->
+      <section class="study-section">
+        <h2>Fix it: slim your tool schemas</h2>
+        <p class="study-sub">
+          The cruft — <code>$schema</code>, <code>additionalProperties</code>, and Pydantic's auto-added
+          <code>title</code> — carries no tool-selection signal, so you can strip it with zero accuracy cost
+          and send compact JSON. Drop this in before you pass <code>tools</code> to the API:
+        </p>
+        <p class="study-sub"><strong>Node / TypeScript</strong></p>
+        <pre style="overflow-x:auto;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;font-size:13px;line-height:1.5;"><code>const strip = (o) =&gt; Array.isArray(o) ? o.map(strip)
+  : (o &amp;&amp; typeof o === "object")
+    ? Object.fromEntries(Object.entries(o)
+        .filter(([k]) =&gt; !["$schema", "additionalProperties", "title"].includes(k))
+        .map(([k, v]) =&gt; [k, strip(v)]))
+    : o;
+
+// compact, cruft-free — send this to the model
+const tools_slim = JSON.stringify(strip(tools));</code></pre>
+        <p class="study-sub"><strong>Python</strong></p>
+        <pre style="overflow-x:auto;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:14px;font-size:13px;line-height:1.5;"><code>import json
+
+def strip(o):
+    if isinstance(o, list):  return [strip(x) for x in o]
+    if isinstance(o, dict):  return {k: strip(v) for k, v in o.items()
+                                     if k not in ("$schema", "additionalProperties", "title")}
+    return o
+
+tools_slim = json.dumps(strip(tools), separators=(",", ":"))  # compact, cruft-free</code></pre>
+        <p class="study-disclaimer">
+          One caveat: <code>additionalProperties: false</code> is occasionally intentional (strict
+          validation) — drop it from the strip list if you rely on it. Measure before/after with the
+          <a href="https://mnifzied-create.github.io/agentloop/">free profiler</a>, which now flags this
+          cruft for you automatically.
+        </p>
+      </section>
+
       <!-- ── FOOTER FUNNEL ─────────────────────────────────────── -->
       <section class="tp-cta">
         <p class="tp-cta-connect">
